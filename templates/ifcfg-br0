@@ -1,0 +1,9 @@
+DEVICE=br0
+TYPE=Bridge
+BOOTPROTO=none
+ONBOOT=yes
+IPADDR={{ ip_address }}
+NETMASK={{ netmask }}
+GATEWAY={{ gateway }}
+DNS1={{ 8.8.8.8 }}
+DNS2={{ 8.8.4.4 }}
