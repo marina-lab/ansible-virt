@@ -1,0 +1,9 @@
+# Install and configure kvm/qemu
+
+- name: Install yum packages
+  yum: name={{ item }} state=present
+  with_items:
+    - qemu-kvm
+    - libvirt
+    - virt-install
+    - bridge-utils
