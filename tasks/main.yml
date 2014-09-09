@@ -22,6 +22,7 @@
     - [ "IPADDR={{ private_ip }}", "absent" ]
     - [ "NETMASK={{ private_if.ipv4.netmask }}", "absent" ]
     - [ "GATEWAY={{ private_if.ipv4.gateway }}", "absent" ]
+  register: private_if_script
 
 - name: Create network bridge script
   template:
@@ -30,3 +31,16 @@
     owner: root
     group: root
     mode: 0644
+  register: bridge_if_script
+
+
+- name: Restart NetworkManager
+  service: name=NetworkManager state=restarted
+  when: private_if_script.changed or bridge_if_script.changed
+
+- name: Restart network
+  service: name=network state=restarted
+  when: private_if_script.changed or bridge_if_script.changed
+
+- name: Start virt service
+  service: name=libvirtd state=started enabled=yes
