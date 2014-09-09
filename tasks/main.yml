@@ -4,6 +4,29 @@
   yum: name={{ item }} state=present
   with_items:
     - qemu-kvm
+    - qemu-img
     - libvirt
+    - libvirt-client
     - virt-install
     - bridge-utils
+
+- name: Configure network bridge on private interface
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ private_if }}
+    line: {{ item[0] }}
+    state: {{ item[1] }}
+  with_items:
+    - [ "NM_CONTROLLED=no", "present" ]
+    - [ "BRIDGE=br0", "present" ]
+    - [ "BOOTPROTO=none", "absent" ]
+    - [ "IPADDR={{ private_ip }}", "absent" ]
+    - [ "NETMASK={{ private_if.ipv4.netmask }}", "absent" ]
+    - [ "GATEWAY={{ private_if.ipv4.gateway }}", "absent" ]
+
+- name: Create network bridge script
+  template:
+    src: ../templates/ifcfg-br0
+    dest: /etc/sysconfig/network-scripts/
+    owner: root
+    group: root
+    mode: 0644
