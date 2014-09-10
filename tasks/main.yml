@@ -13,16 +13,24 @@
 - name: Configure network bridge on private interface
   lineinfile:
     dest: /etc/sysconfig/network-scripts/ifcfg-{{ private_if }}
-    line: {{ item[0] }}
-    state: {{ item[1] }}
+    line: "{{ item.line }}"
+    state: "{{ item.state }}"
   with_items:
-    - [ "NM_CONTROLLED=no", "present" ]
-    - [ "BRIDGE=br0", "present" ]
-    - [ "BOOTPROTO=none", "absent" ]
-    - [ "IPADDR={{ private_ip }}", "absent" ]
-    - [ "NETMASK={{ private_if.ipv4.netmask }}", "absent" ]
-    - [ "GATEWAY={{ private_if.ipv4.gateway }}", "absent" ]
-  register: private_if_script
+    - { line: "NM_CONTROLLED=no", state: "present" }
+    - { line: "BRIDGE=br0", state: "present" }
+  register: private_if_script_1
+
+- name: Remove network lines from private interface script
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ private_if }}
+    regexp: "{{ item }}"
+    state: absent
+  with_items:
+    - "^BOOTPROTO=.*$"
+    - "^IPADDR=.*$"
+    - "^NETMASK=.*$"
+    - "^GATEWAY=.*$"
+  register: private_if_script_2
 
 - name: Create network bridge script
   template:
@@ -36,11 +44,11 @@
 
 - name: Restart NetworkManager
   service: name=NetworkManager state=restarted
-  when: private_if_script.changed or bridge_if_script.changed
+  when: private_if_script_1.changed or private_if_script_2.changed or bridge_if_script.changed
 
 - name: Restart network
   service: name=network state=restarted
-  when: private_if_script.changed or bridge_if_script.changed
+  when: private_if_script_1.changed or private_if_script_2.changed or bridge_if_script.changed
 
 - name: Start virt service
   service: name=libvirtd state=started enabled=yes
